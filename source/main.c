@@ -36,8 +36,11 @@ static int get_auth(struct thread *td, struct get_auth_args *args) {
 }
 
 int _main(struct thread *td) {
-	struct get_auth_req req;
 	int fd;
+	struct stat st;
+	char *buf, *next;
+	size_t i;
+	struct get_auth_req req;
 
 	initKernel();
 	initLibc();
@@ -45,26 +48,96 @@ int _main(struct thread *td) {
 	mmap_patch();
 	initSysUtil();
 
-	// get auth info
-	req.file = "/system/sys/SceSysCore.elf";
-
-	if (kexec(get_auth, &req) < 0) {
-		printf_notification("Failed to dump auth info.");
-		return 0;
-	}
-
-	// write to usb drive
-	fd = open("/mnt/usb0/auth-info.bin", O_WRONLY | O_CREAT | O_TRUNC, 0777);
+	// open list file
+	fd = open("/mnt/usb0/dump-list.txt", O_RDONLY, 0);
 
 	if (fd < 0) {
-		printf_notification("Cannot create auth-info.bin on the USB drive.");
+		printf_notification("Cannot open dump-list.txt on the USB drive.");
 		return 0;
 	}
 
-	write(fd, req.buf, 136);
+	if (fstat(fd, &st) < 0) {
+		printf_notification("Cannot determine the size of dump-list.txt on the USB drive.");
+		return 0;
+	}
+
+	// read list file
+	buf = malloc(st.st_size + 1);
+	i = 0;
+
+	while (i != st.st_size) {
+		ssize_t n = read(fd, buf + i, st.st_size - i);
+
+		if (n < 0) {
+			printf_notification("Cannot read dump-list.txt on the USB drive.");
+			return 0;
+		}
+
+		i += n;
+	}
+
+	buf[st.st_size] = 0;
 	close(fd);
 
-	printf_notification("Auth info dumped!");
+	// parse list file
+	next = buf;
+
+	for (;;) {
+		char *p;
+
+		// check if no more entries
+		if (!*next) {
+			break;
+		}
+
+		// get target file
+		if (!(p = index(next, ':'))) {
+			printf_notification("dump-list.txt on the USB drive has invalid format.");
+			return 0;
+		}
+
+		*p = 0;
+
+		// get auth info
+		req.file = next;
+
+		if (kexec(get_auth, &req) < 0) {
+			printf_notification("Failed to dump auth info for %s.", next);
+			return 0;
+		}
+
+		// get output file
+		next = p + 1;
+
+		if (p = index(next, '\n')) {
+			*p = 0;
+
+			if (p[-1] == '\r') {
+				p[-1] = 0;
+			}
+		}
+
+		// write to usb drive
+		fd = open(next, O_WRONLY | O_CREAT | O_TRUNC, 0777);
+
+		if (fd < 0) {
+			printf_notification("Cannot create %s.", next);
+			return 0;
+		}
+
+		write(fd, req.buf, 136);
+		close(fd);
+
+		// move to next line
+		if (!p) {
+			break;
+		}
+
+		next = p + 1;
+	}
+
+	free(buf);
+	printf_notification("Auth info dump completed!");
 
 	return 0;
 }
