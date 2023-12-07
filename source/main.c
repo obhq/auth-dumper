@@ -113,7 +113,7 @@ int _main(struct thread *td) {
         next = p + 1;
         p = strchr(next, '\n');
         if (p) {
-            if (p > next && p[-1] == '\r') {
+            if (p[-1] == '\r') {
                 p[-1] = '\0';
             }
             *p = '\0';

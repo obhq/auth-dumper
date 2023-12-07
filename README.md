@@ -4,7 +4,7 @@ This is a PS4 payload to dump [auth info](https://www.psdevwiki.com/ps4/Auth_Inf
 
 ## How to use
 
-1. Download .bin from [Github Actions](test) or build it yourself!
+1. Download .bin from [Releases](https://github.com/obhq/auth-dumper/releases/latest) or build it yourself!
 2. Setup your prefered payload loader, for Payload Guest, put the payload on the root of your usb under a folder named `payloads` or on your PS4 under `/data/payloads`
 3. On the root of your USB, make a file named `dump-list.txt`
 4. This payload can dump multiple auth-infos on one execution, so open `dump-list.txt` and format each line like this: `/readauthinfofrom/folder/file.self:/exportauthinfoto/file.bin` An example is below:
