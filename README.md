@@ -13,6 +13,7 @@ This is a PS4 payload to dump [auth info](https://www.psdevwiki.com/ps4/Auth_Inf
 /system/sys/SceVdecProxy.elf:/data/dumpedVdecProxy.bin
 ```
 The program will dump SceSysCore, then SceVdecProxy. You can use the list above as a test as any PS4 with 9.00 will contain these files!
+
 5. Plug the USB into your PS4, then run the payload.
 6. Enjoy your newly dumped files!
 
